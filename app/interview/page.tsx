@@ -189,30 +189,8 @@ function InterviewContent() {
       currentAudioRef.current.pause();
       currentAudioRef.current = null;
     }
-    setIsSpeaking(true);
-    try {
-      const res = await fetch("/api/tts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, interviewer }),
-      });
-      if (!res.ok) {
-        // Sin saldo o error → fallback a voz del navegador
-        speakFallback(text);
-        return;
-      }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      currentAudioRef.current = audio;
-      audio.onended = () => { setIsSpeaking(false); URL.revokeObjectURL(url); currentAudioRef.current = null; };
-      audio.onerror = () => { setIsSpeaking(false); speakFallback(text); };
-      const p = audio.play();
-      if (p) p.catch(() => { setIsSpeaking(false); speakFallback(text); });
-    } catch {
-      speakFallback(text);
-    }
-  }, [interviewer, speakFallback]);
+    await speakFallback(text);
+  }, [speakFallback]);
 
   const stopSpeaking = () => {
     if (currentAudioRef.current) {
@@ -380,127 +358,65 @@ function InterviewContent() {
     return fullTextRef.current;
   };
 
-  // En modo voz: typewriter inmediato + new Audio() en PC + AudioContext en móvil si falla autoplay
+  // Modo voz: Web Speech API con sincronización de texto
   const speakSynced = useCallback((text: string): Promise<void> => {
     return new Promise((resolve) => {
-      let settled = false;
-      const finish = () => {
-        if (settled) return;
-        settled = true;
-        speakResolveRef.current = null;
-        stopTypewriter();
-        displayedRef.current = fullTextRef.current.length;
-        setStreamingText(fullTextRef.current);
-        setIsSpeaking(false);
-        resolve();
-      };
-      const cleanupAndFinish = (clearPoll: () => void) => { clearPoll(); finish(); };
-
-      speakResolveRef.current = finish;
+      window.speechSynthesis.cancel();
+      const clean = text.replace(/[*_#`]/g, "");
+      fullTextRef.current = clean;
       displayedRef.current = 0;
       setStreamingText("");
       setIsSpeaking(true);
 
-      // Typewriter arranca siempre — texto animado aunque el audio falle
-      startTypewriter();
-
-      // Poll: si no hay audio, resolver cuando typewriter termine
-      const poll = setInterval(() => {
-        if (settled) { clearInterval(poll); return; }
-        if (fullTextRef.current.length > 0 && displayedRef.current >= fullTextRef.current.length) {
-          clearInterval(poll);
-          finish();
-        }
-      }, 100);
-
-      const cap = setTimeout(() => { clearInterval(poll); finish(); }, 35000);
-      const stopPoll = () => { clearTimeout(cap); clearInterval(poll); };
-
-      // Reajustar velocidad typewriter a la duración del audio
-      const resyncTypewriter = (durationSec: number) => {
-        if (settled) return;
-        const total = fullTextRef.current.length;
-        const shown = displayedRef.current;
-        const remaining = total - shown;
-        if (remaining <= 0) return;
-        const targetMs = durationSec * 950 - shown * 22;
-        const msPerChar = Math.max(16, targetMs / remaining);
-        const pauseDot = Math.round(280 / msPerChar);
-        const pauseComma = Math.round(100 / msPerChar);
-        stopTypewriter();
-        let pauseFor = 0;
-        typewriterRef.current = setInterval(() => {
-          if (settled) { stopTypewriter(); return; }
-          if (pauseFor > 0) { pauseFor--; return; }
-          const s = displayedRef.current;
-          if (s >= total) { stopTypewriter(); return; }
-          displayedRef.current = s + 1;
-          setStreamingText(fullTextRef.current.slice(0, s + 1));
-          const ch = fullTextRef.current[s];
-          if (ch === "." || ch === "?" || ch === "!") pauseFor = pauseDot;
-          else if (ch === ",") pauseFor = pauseComma;
-        }, msPerChar);
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        displayedRef.current = clean.length;
+        setStreamingText(clean);
+        setIsSpeaking(false);
+        speakResolveRef.current = null;
+        resolve();
       };
 
-      fetch("/api/tts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, interviewer }),
-      })
-        .then((res) => { if (!res.ok) throw new Error("TTS failed"); return res.arrayBuffer(); })
-        .then((arrayBuffer) => {
-          if (settled) return;
+      speakResolveRef.current = finish;
+      const safetyTimeout = setTimeout(finish, 30000);
 
-          // Intentar new Audio() → funciona en PC directamente
-          const blob = new Blob([arrayBuffer], { type: "audio/mpeg" });
-          const url = URL.createObjectURL(blob);
-          const audio = new Audio(url);
-          currentAudioRef.current = audio;
+      const doSpeak = (voices: SpeechSynthesisVoice[]) => {
+        const utt = new SpeechSynthesisUtterance(clean);
+        utt.lang = "es-ES";
+        utt.rate = interviewer === "pau" ? 1.08 : 1.0;
+        utt.pitch = interviewer === "pau" ? 1.05 : 0.82;
 
-          audio.addEventListener("loadedmetadata", () => resyncTypewriter(audio.duration));
+        const maleNames = ["pablo", "diego", "jorge", "carlos", "miguel", "juan", "alberto", "male"];
+        const priority = [
+          (v: SpeechSynthesisVoice) => v.lang === "es-ES" && maleNames.some(n => v.name.toLowerCase().includes(n)),
+          (v: SpeechSynthesisVoice) => v.lang.startsWith("es") && maleNames.some(n => v.name.toLowerCase().includes(n)),
+          (v: SpeechSynthesisVoice) => v.name.toLowerCase().includes("microsoft") && v.lang.startsWith("es"),
+          (v: SpeechSynthesisVoice) => v.lang === "es-ES",
+          (v: SpeechSynthesisVoice) => v.lang.startsWith("es"),
+        ];
+        for (const fn of priority) {
+          const found = voices.find(fn);
+          if (found) { utt.voice = found; break; }
+        }
 
-          audio.onended = () => {
-            URL.revokeObjectURL(url);
-            currentAudioRef.current = null;
-            cleanupAndFinish(stopPoll);
-          };
-          audio.onerror = () => {
-            URL.revokeObjectURL(url);
-            currentAudioRef.current = null;
-            // poll resolverá vía typewriter
-          };
+        utt.onboundary = (event) => {
+          const shown = event.charIndex + (event.charLength ?? 1);
+          displayedRef.current = shown;
+          setStreamingText(clean.slice(0, shown));
+        };
+        utt.onend = () => { clearTimeout(safetyTimeout); finish(); };
+        utt.onerror = () => { clearTimeout(safetyTimeout); finish(); };
+        window.speechSynthesis.speak(utt);
+      };
 
-          const playPromise = audio.play();
-          if (playPromise) {
-            playPromise.catch(() => {
-              // Autoplay bloqueado (móvil) → probar AudioContext pre-desbloqueado
-              URL.revokeObjectURL(url);
-              currentAudioRef.current = null;
-              const ctx = audioCtxRef.current;
-              if (!ctx) return; // poll gestiona la resolución
-              ctx.decodeAudioData(arrayBuffer.slice(0))
-                .then((audioBuffer) => {
-                  if (settled) return;
-                  resyncTypewriter(audioBuffer.duration);
-                  const source = ctx.createBufferSource();
-                  source.buffer = audioBuffer;
-                  source.connect(ctx.destination);
-                  audioSourceRef.current = source;
-                  source.onended = () => {
-                    audioSourceRef.current = null;
-                    cleanupAndFinish(stopPoll);
-                  };
-                  source.start();
-                })
-                .catch(() => {
-                  // AudioContext también falló → poll gestiona la resolución
-                });
-            });
-          }
-        })
-        .catch(() => {
-          // Fetch TTS falló → poll gestiona la resolución vía typewriter
-        });
+      const voices = window.speechSynthesis.getVoices();
+      if (voices.length > 0) {
+        doSpeak(voices);
+      } else {
+        window.speechSynthesis.onvoiceschanged = () => doSpeak(window.speechSynthesis.getVoices());
+      }
     });
   }, [interviewer]);
 

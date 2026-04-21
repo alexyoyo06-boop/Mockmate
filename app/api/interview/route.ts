@@ -3,8 +3,6 @@ import { NextRequest } from "next/server";
 
 export const maxDuration = 60;
 
-const client = new Groq({ apiKey: process.env.GROQ_API_KEY });
-
 const MODEL = "llama-3.3-70b-versatile";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -126,6 +124,7 @@ Genera el informe en el siguiente formato JSON exacto (sin markdown, solo JSON p
 }
 
 export async function POST(req: NextRequest) {
+  const client = new Groq({ apiKey: process.env.GROQ_API_KEY });
   const {
     messages,
     role,

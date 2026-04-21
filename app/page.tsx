@@ -2,15 +2,128 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import UserNav from "@/components/UserNav";
 
-const ROLES = [
-  { id: "frontend", label: "Frontend Dev", icon: "FE", desc: "React · CSS · JS" },
-  { id: "backend", label: "Backend Dev", icon: "BE", desc: "APIs · DBs · Arquitectura" },
-  { id: "fullstack", label: "Full Stack", icon: "FS", desc: "Frontend + Backend" },
-  { id: "data", label: "Data Scientist", icon: "DS", desc: "ML · Python · Estadística" },
-  { id: "devops", label: "DevOps / SRE", icon: "DO", desc: "CI/CD · Infra · Cloud" },
-  { id: "mobile", label: "Mobile Dev", icon: "MB", desc: "iOS · Android · RN" },
+const CATEGORIES = [
+  {
+    id: "tech",
+    name: "Informática",
+    accent: "#ff2b2b",
+    jobs: [
+      { name: "Frontend Developer", icon: "FE" },
+      { name: "Backend Developer", icon: "BE" },
+      { name: "Full Stack Developer", icon: "FS" },
+      { name: "Data Scientist", icon: "DS" },
+      { name: "DevOps Engineer", icon: "DO" },
+      { name: "Mobile Developer", icon: "MB" },
+      { name: "Game Developer", icon: "GD" },
+      { name: "QA Engineer", icon: "QA" },
+      { name: "Security Analyst", icon: "SA" },
+      { name: "Cloud Architect", icon: "CA" },
+      { name: "ML Engineer", icon: "ML" },
+      { name: "AI Engineer", icon: "AI" },
+      { name: "Network Engineer", icon: "NE" },
+      { name: "Database Administrator", icon: "DB" },
+      { name: "IT Support", icon: "IT" },
+      { name: "Product Manager", icon: "PM" },
+      { name: "Technical Lead", icon: "TL" },
+      { name: "Site Reliability Engineer", icon: "SR" },
+      { name: "Data Engineer", icon: "DE" },
+      { name: "Data Analyst", icon: "DA" },
+      { name: "AR/VR Developer", icon: "VR" },
+      { name: "Blockchain Developer", icon: "BC" },
+      { name: "Scrum Master", icon: "SM" },
+      { name: "UI/UX Designer", icon: "UX" },
+    ],
+  },
+  {
+    id: "design",
+    name: "Diseño",
+    accent: "#7c3aed",
+    jobs: [
+      { name: "Graphic Designer", icon: "GR" },
+      { name: "Brand Designer", icon: "BR" },
+      { name: "Motion Designer", icon: "MO" },
+      { name: "UX Researcher", icon: "UX" },
+      { name: "3D Artist", icon: "3D" },
+      { name: "Illustrator", icon: "IL" },
+      { name: "Video Editor", icon: "VE" },
+      { name: "Art Director", icon: "AD" },
+      { name: "Creative Director", icon: "CD" },
+      { name: "Product Designer", icon: "PD" },
+      { name: "Visual Designer", icon: "VD" },
+      { name: "Web Designer", icon: "WD" },
+    ],
+  },
+  {
+    id: "marketing",
+    name: "Marketing",
+    accent: "#d97706",
+    jobs: [
+      { name: "Digital Marketing Manager", icon: "DM" },
+      { name: "SEO Specialist", icon: "SE" },
+      { name: "Content Creator", icon: "CC" },
+      { name: "Social Media Manager", icon: "SM" },
+      { name: "Growth Hacker", icon: "GH" },
+      { name: "Email Marketing Specialist", icon: "EM" },
+      { name: "Performance Marketing Manager", icon: "PM" },
+      { name: "Brand Strategist", icon: "BS" },
+      { name: "Copywriter", icon: "CW" },
+      { name: "Community Manager", icon: "CM" },
+      { name: "Paid Media Specialist", icon: "PA" },
+    ],
+  },
+  {
+    id: "finance",
+    name: "Finanzas",
+    accent: "#059669",
+    jobs: [
+      { name: "Financial Analyst", icon: "FA" },
+      { name: "Investment Banker", icon: "IB" },
+      { name: "Accountant", icon: "AC" },
+      { name: "Risk Analyst", icon: "RA" },
+      { name: "Financial Controller", icon: "FC" },
+      { name: "Auditor", icon: "AU" },
+      { name: "Portfolio Manager", icon: "PO" },
+      { name: "Tax Consultant", icon: "TC" },
+      { name: "CFO", icon: "CF" },
+      { name: "Business Analyst", icon: "BA" },
+    ],
+  },
+  {
+    id: "health",
+    name: "Salud",
+    accent: "#0284c7",
+    jobs: [
+      { name: "Nurse", icon: "NR" },
+      { name: "Physician", icon: "MD" },
+      { name: "Pharmacist", icon: "PH" },
+      { name: "Physical Therapist", icon: "PT" },
+      { name: "Clinical Psychologist", icon: "PS" },
+      { name: "Nutritionist", icon: "NU" },
+      { name: "Healthcare Manager", icon: "HM" },
+      { name: "Medical Researcher", icon: "MR" },
+      { name: "Dentist", icon: "DN" },
+    ],
+  },
+  {
+    id: "legal",
+    name: "Legal",
+    accent: "#64748b",
+    jobs: [
+      { name: "Lawyer", icon: "LW" },
+      { name: "Legal Counsel", icon: "LC" },
+      { name: "Paralegal", icon: "PL" },
+      { name: "Compliance Officer", icon: "CO" },
+      { name: "Contract Manager", icon: "CM" },
+      { name: "IP Specialist", icon: "IP" },
+      { name: "Tax Lawyer", icon: "TL" },
+      { name: "Judge", icon: "JG" },
+    ],
+  },
 ];
+
+const ALL_JOB_NAMES = CATEGORIES.flatMap((c) => c.jobs.map((j) => j.name));
 
 const LEVELS = [
   { id: "junior", label: "JUNIOR", desc: "0–2 años", tag: "01" },
@@ -18,28 +131,15 @@ const LEVELS = [
   { id: "senior", label: "SENIOR", desc: "5+ años", tag: "03" },
 ];
 
-const TECH_JOBS = [
-  "Game Developer", "QA Engineer", "Security Analyst", "Cybersecurity Engineer",
-  "Cloud Architect", "ML Engineer", "AI Engineer", "Blockchain Developer",
-  "Embedded Systems Engineer", "Firmware Engineer", "Network Engineer",
-  "Database Administrator", "Systems Administrator", "IT Support",
-  "Product Manager", "Scrum Master", "Technical Lead", "Engineering Manager",
-  "UI/UX Designer", "UX Researcher", "3D Artist", "Graphics Programmer",
-  "Backend Engineer", "Platform Engineer", "Site Reliability Engineer",
-  "AR/VR Developer", "Robotics Engineer", "Bioinformatics Developer",
-  "Data Engineer", "Data Analyst", "Business Intelligence", "ETL Developer",
-  "Salesforce Developer", "SAP Consultant", "ERP Developer",
-];
-
 const JOB_KEYWORDS = [
   "dev", "developer", "engineer", "analyst", "architect", "designer",
   "manager", "lead", "administrator", "consultant", "programmer",
   "scientist", "researcher", "specialist", "technician", "ops",
+  "lawyer", "nurse", "doctor", "physician", "accountant", "director",
 ];
 
 function looksLikeJob(text: string): boolean {
-  const lower = text.toLowerCase();
-  return JOB_KEYWORDS.some((kw) => lower.includes(kw));
+  return JOB_KEYWORDS.some((kw) => text.toLowerCase().includes(kw));
 }
 
 const INTERVIEWERS = [
@@ -63,7 +163,8 @@ const INTERVIEWERS = [
 
 export default function Home() {
   const router = useRouter();
-  const [selectedRole, setSelectedRole] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState(CATEGORIES[0].id);
+  const [selectedJob, setSelectedJob] = useState<string | null>(null);
   const [customRoleText, setCustomRoleText] = useState("");
   const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
   const [selectedInterviewer, setSelectedInterviewer] = useState<string | null>(null);
@@ -73,13 +174,16 @@ export default function Home() {
   const [lang, setLang] = useState<"es" | "en">("es");
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
-  const effectiveRole = selectedRole === "otro" ? customRoleText.trim() : selectedRole;
+  const activeCategory = CATEGORIES.find((c) => c.id === selectedCategory)!;
+  const accent = activeCategory.accent;
+
   const customTrimmed = customRoleText.trim();
   const suggestions = customTrimmed.length >= 2
-    ? TECH_JOBS.filter((j) => j.toLowerCase().includes(customTrimmed.toLowerCase())).slice(0, 5)
+    ? ALL_JOB_NAMES.filter((j) => j.toLowerCase().includes(customTrimmed.toLowerCase())).slice(0, 5)
     : [];
-  const showJobWarning = selectedRole === "otro" && customTrimmed.length >= 3 && !looksLikeJob(customTrimmed);
-  const canProceedStep1 = selectedRole && (selectedRole !== "otro" || customTrimmed.length >= 2);
+  const showJobWarning = selectedJob === "otro" && customTrimmed.length >= 3 && !looksLikeJob(customTrimmed);
+  const effectiveRole = selectedJob === "otro" ? customTrimmed : selectedJob;
+  const canProceedStep1 = selectedJob && (selectedJob !== "otro" || customTrimmed.length >= 2);
 
   const handleStart = () => {
     if (!effectiveRole || !selectedLevel || !selectedInterviewer) return;
@@ -99,16 +203,34 @@ export default function Home() {
     <main className="min-h-screen" style={{ background: "var(--bg)" }}>
 
       {/* Top bar */}
-      <div className="border-b-2 border-black px-4 sm:px-6 py-3 flex items-center justify-between">
-        <button onClick={() => { setStep(1); window.scrollTo({ top: 0, behavior: "smooth" }); }} className="font-black text-xl tracking-tight mono hover:opacity-70 transition-opacity">MOCKMATE</button>
+      <div className="border-b-2 border-black px-4 sm:px-6 py-3 flex items-center justify-between" style={{ transition: "background 0.5s ease" }}>
+        <button
+          onClick={() => { setStep(1); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+          className="font-black text-xl tracking-tight mono hover:opacity-70 transition-all"
+          style={{ color: accent, transition: "color 0.5s ease" }}
+        >
+          MOCKMATE
+        </button>
         <div className="flex items-center gap-2 sm:gap-3">
-          <button onClick={() => router.push("/stats")} className="mono text-xs border border-black px-2 py-1 hover:bg-black hover:text-white transition-colors">PROGRESO →</button>
-          <span className="mono text-xs border border-black px-2 py-1 hidden sm:inline">POWERED BY GROQ</span>
+          <button
+            onClick={() => router.push("/stats")}
+            className="mono text-xs px-2 py-1 font-bold transition-all"
+            style={{ border: `1px solid ${accent}`, color: accent, transition: "color 0.5s ease, border-color 0.5s ease" }}
+          >
+            PROGRESO →
+          </button>
+          <span
+            className="mono text-xs px-2 py-1 hidden sm:inline"
+            style={{ border: `1px solid ${accent}`, color: accent, transition: "color 0.5s ease, border-color 0.5s ease" }}
+          >
+            POWERED BY GROQ
+          </span>
+          <UserNav />
         </div>
       </div>
 
       {/* Marquee */}
-      <div className="border-b-2 border-black overflow-hidden py-2 bg-black text-white">
+      <div className="border-b-2 border-black overflow-hidden py-2 text-white" style={{ background: accent, transition: "background 0.5s ease" }}>
         <div className="flex animate-marquee whitespace-nowrap">
           {Array(4).fill("SIMULADOR DE ENTREVISTAS TÉCNICAS CON IA  ·  PRACTICA · MEJORA · CONSIGUE EL TRABAJO  ·  ").map((t, i) => (
             <span key={i} className="mono text-xs px-4">{t}</span>
@@ -120,10 +242,10 @@ export default function Home() {
 
         {/* Hero */}
         <div className="mb-14 animate-fade-in">
-          <div className="mono text-xs mb-3" style={{ color: "var(--red)" }}>
+          <div className="mono text-xs mb-3" style={{ color: accent, transition: "color 0.5s ease" }}>
             — SIMULADOR DE ENTREVISTAS CON IA
           </div>
-          <h1 className="text-[clamp(3rem,10vw,6rem)] font-black leading-none tracking-tighter mb-4 border-b-2 border-black pb-4">
+          <h1 className="text-[clamp(3rem,10vw,6rem)] font-black leading-none tracking-tighter mb-4 border-b-2 pb-4" style={{ borderColor: accent, transition: "border-color 0.5s ease" }}>
             PRACTICA.<br />MEJORA.<br />CONSIGUE<br />EL TRABAJO.
           </h1>
           <p className="text-base max-w-md" style={{ color: "#555" }}>
@@ -132,14 +254,16 @@ export default function Home() {
         </div>
 
         {/* Step indicators */}
-        <div className="flex gap-0 mb-10 border-2 border-black w-full sm:w-fit overflow-hidden">
+        <div className="flex gap-0 mb-10 border-2 border-black w-full sm:w-fit overflow-hidden" style={{ borderColor: accent, transition: "border-color 0.5s ease" }}>
           {[["01", "PUESTO"], ["02", "NIVEL"], ["03", "ENTREVISTADOR"]].map(([num, label], i) => (
             <div
               key={i}
-              className="flex-1 sm:flex-none px-2 sm:px-4 py-2 mono text-xs font-bold border-r-2 border-black last:border-r-0 text-center sm:text-left"
+              className="flex-1 sm:flex-none px-2 sm:px-4 py-2 mono text-xs font-bold border-r-2 last:border-r-0 text-center sm:text-left"
               style={{
-                background: step === i + 1 ? "var(--black)" : step > i + 1 ? "#555" : "white",
+                background: step === i + 1 ? accent : step > i + 1 ? accent + "99" : "white",
                 color: step >= i + 1 ? "white" : "#aaa",
+                borderColor: accent,
+                transition: "background 0.5s ease, border-color 0.5s ease",
               }}
             >
               <span className="sm:hidden">{num}</span>
@@ -152,43 +276,76 @@ export default function Home() {
         {step === 1 && (
           <div className="animate-fade-in">
             <h2 className="text-2xl font-black mb-6 uppercase tracking-tight">¿Para qué puesto?</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-0 border-2 border-black mb-4">
-              {ROLES.map((role, i) => (
-                <button
-                  key={role.id}
-                  onClick={() => setSelectedRole(role.id)}
-                  className="p-4 text-left border-r-2 border-b-2 border-black transition-all"
-                  style={{
-                    background: selectedRole === role.id ? "var(--black)" : "white",
-                    color: selectedRole === role.id ? "white" : "var(--black)",
-                    borderRight: (i + 1) % 3 === 0 ? "none" : "2px solid var(--black)",
-                  }}
-                >
-                  <div className="mono text-xs mb-2" style={{ color: selectedRole === role.id ? "var(--red)" : "#aaa" }}>
-                    {role.icon}
-                  </div>
-                  <div className="font-bold text-sm">{role.label}</div>
-                  <div className="text-xs mt-1 opacity-60">{role.desc}</div>
-                </button>
-              ))}
-              {/* Opción personalizada */}
-              <button
-                onClick={() => setSelectedRole("otro")}
-                className="p-4 text-left border-r-2 border-b-2 border-black transition-all col-span-full sm:col-span-full"
-                style={{
-                  background: selectedRole === "otro" ? "var(--black)" : "white",
-                  color: selectedRole === "otro" ? "white" : "var(--black)",
-                  borderRight: "none",
-                  borderBottom: "none",
-                }}
-              >
-                <div className="mono text-xs mb-2" style={{ color: selectedRole === "otro" ? "var(--red)" : "#aaa" }}>??</div>
-                <div className="font-bold text-sm">Otro puesto</div>
-                <div className="text-xs mt-1 opacity-60">Escribe el puesto que quieras</div>
-              </button>
+
+            {/* Category tabs */}
+            <div className="flex overflow-x-auto border-2 border-black mb-0 bg-white">
+              {CATEGORIES.map((cat) => {
+                const isActive = selectedCategory === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => {
+                      setSelectedCategory(cat.id);
+                      setSelectedJob(null);
+                    }}
+                    className="flex-shrink-0 px-4 py-3 mono text-xs font-bold border-r-2 border-black last:border-r-0 transition-all whitespace-nowrap"
+                    style={{
+                      background: isActive ? "var(--black)" : "white",
+                      color: isActive ? cat.accent : "#aaa",
+                      borderBottom: isActive ? `3px solid ${cat.accent}` : "none",
+                    }}
+                  >
+                    {cat.name.toUpperCase()}
+                  </button>
+                );
+              })}
             </div>
 
-            {selectedRole === "otro" && (
+            {/* Jobs grid */}
+            <div className="border-2 border-t-0 border-black mb-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3">
+                {activeCategory.jobs.map((job, i) => {
+                  const isSelected = selectedJob === job.name;
+                  const cols = 3;
+                  const isLastRow = i >= activeCategory.jobs.length - (activeCategory.jobs.length % cols || cols);
+                  return (
+                    <button
+                      key={job.name}
+                      onClick={() => setSelectedJob(job.name)}
+                      className="p-4 text-left transition-all border-r-2 border-b-2 border-black"
+                      style={{
+                        background: isSelected ? "var(--black)" : "white",
+                        color: isSelected ? "white" : "var(--black)",
+                        borderRight: (i + 1) % 3 === 0 ? "none" : "2px solid var(--black)",
+                        borderBottom: isLastRow ? "none" : "2px solid var(--black)",
+                      }}
+                    >
+                      <div className="mono text-xs mb-2 font-bold" style={{ color: isSelected ? accent : "#bbb" }}>
+                        {job.icon}
+                      </div>
+                      <div className="font-bold text-sm leading-tight">{job.name}</div>
+                    </button>
+                  );
+                })}
+
+                {/* Otro puesto */}
+                <button
+                  onClick={() => setSelectedJob("otro")}
+                  className="p-4 text-left transition-all col-span-full border-t-2 border-black"
+                  style={{
+                    background: selectedJob === "otro" ? "var(--black)" : "white",
+                    color: selectedJob === "otro" ? "white" : "var(--black)",
+                  }}
+                >
+                  <div className="mono text-xs mb-2 font-bold" style={{ color: selectedJob === "otro" ? accent : "#bbb" }}>??</div>
+                  <div className="font-bold text-sm">Otro puesto</div>
+                  <div className="text-xs mt-1 opacity-60">Escribe el puesto que quieras</div>
+                </button>
+              </div>
+            </div>
+
+            {/* Custom input */}
+            {selectedJob === "otro" && (
               <div className="mb-8">
                 <div className="border-2 border-black bg-white">
                   <div className="px-4 py-2 border-b-2 border-black mono text-xs opacity-50">ESCRIBE EL PUESTO</div>
@@ -196,14 +353,12 @@ export default function Home() {
                     type="text"
                     value={customRoleText}
                     onChange={(e) => setCustomRoleText(e.target.value)}
-                    placeholder="Ej: Game Developer, QA Engineer, Security Analyst..."
+                    placeholder="Ej: Game Developer, Nurse, Financial Analyst..."
                     className="brutal-input w-full px-4 py-3 text-base border-0"
                     autoFocus
                     maxLength={60}
                   />
                 </div>
-
-                {/* Sugerencias */}
                 {suggestions.length > 0 && (
                   <div className="border-2 border-t-0 border-black bg-white">
                     {suggestions.map((s) => (
@@ -217,20 +372,18 @@ export default function Home() {
                     ))}
                   </div>
                 )}
-
-                {/* Aviso si no parece un trabajo */}
                 {showJobWarning && (
                   <div className="border-2 border-t-0 border-black px-4 py-3 mono text-xs flex items-start gap-2" style={{ background: "var(--red)", color: "white" }}>
                     <span>⚠️</span>
                     <span>
-                      <strong>&quot;{customTrimmed}&quot;</strong> no parece un puesto de trabajo. Prueba algo como <em>Game Developer</em>, <em>QA Engineer</em> o <em>Security Analyst</em>.
+                      <strong>&quot;{customTrimmed}&quot;</strong> no parece un puesto. Prueba algo como <em>Game Developer</em>, <em>Nurse</em> o <em>Financial Analyst</em>.
                     </span>
                   </div>
                 )}
               </div>
             )}
 
-            {selectedRole !== "otro" && <div className="mb-8" />}
+            {selectedJob !== "otro" && <div className="mb-8" />}
 
             <button
               onClick={() => canProceedStep1 && setStep(2)}
@@ -266,7 +419,7 @@ export default function Home() {
                     <span className="ml-3 text-sm opacity-60">{level.desc}</span>
                   </div>
                   {selectedLevel === level.id && (
-                    <span className="mono text-xs" style={{ color: "var(--red)" }}>✓ SELECCIONADO</span>
+                    <span className="mono text-xs" style={{ color: accent }}>✓ SELECCIONADO</span>
                   )}
                 </button>
               ))}
@@ -300,7 +453,7 @@ export default function Home() {
                   }}
                 >
                   <div className="text-4xl mb-3">{iv.emoji}</div>
-                  <div className="mono text-xs mb-1" style={{ color: selectedInterviewer === iv.id ? "var(--red)" : "#aaa" }}>
+                  <div className="mono text-xs mb-1" style={{ color: selectedInterviewer === iv.id ? accent : "#aaa" }}>
                     {iv.tag}
                   </div>
                   <div className="font-black text-2xl mb-1">{iv.name}</div>
@@ -309,32 +462,15 @@ export default function Home() {
                 </button>
               ))}
             </div>
+
             {/* Opciones adicionales */}
             <div className="border-2 border-black bg-white mb-8">
               <div className="border-b-2 border-black px-4 py-2 mono text-xs opacity-50">OPCIONES</div>
               <div className="divide-y-2 divide-black">
                 {[
-                  {
-                    id: "noFeedback",
-                    label: "Modo sin feedback",
-                    desc: "El entrevistador no comenta tus respuestas. Más realista.",
-                    value: noFeedback,
-                    toggle: () => setNoFeedback((v) => !v),
-                  },
-                  {
-                    id: "softskills",
-                    label: "Incluir softskills",
-                    desc: "Añade 1-2 preguntas de trabajo en equipo y cultura.",
-                    value: softskills,
-                    toggle: () => setSoftskills((v) => !v),
-                  },
-                  {
-                    id: "timer",
-                    label: "Cronómetro de respuesta",
-                    desc: "2 minutos por pregunta. Simula la presión real.",
-                    value: timerEnabled,
-                    toggle: () => setTimerEnabled((v) => !v),
-                  },
+                  { id: "noFeedback", label: "Modo sin feedback", desc: "El entrevistador no comenta tus respuestas. Más realista.", value: noFeedback, toggle: () => setNoFeedback((v) => !v) },
+                  { id: "softskills", label: "Incluir softskills", desc: "Añade 1-2 preguntas de trabajo en equipo y cultura.", value: softskills, toggle: () => setSoftskills((v) => !v) },
+                  { id: "timer", label: "Cronómetro de respuesta", desc: "2 minutos por pregunta. Simula la presión real.", value: timerEnabled, toggle: () => setTimerEnabled((v) => !v) },
                 ].map((opt) => (
                   <button
                     key={opt.id}
@@ -345,38 +481,19 @@ export default function Home() {
                       <div className="font-bold text-sm">{opt.label}</div>
                       <div className="text-xs opacity-50 mt-0.5">{opt.desc}</div>
                     </div>
-                    <div
-                      className="w-10 h-5 border-2 border-black relative flex-shrink-0 ml-4 transition-all"
-                      style={{ background: opt.value ? "var(--black)" : "white" }}
-                    >
-                      <div
-                        className="absolute top-0 w-4 h-full border-r-2 border-black transition-all"
-                        style={{ left: opt.value ? "calc(100% - 1rem)" : "0", background: opt.value ? "white" : "#ccc" }}
-                      />
+                    <div className="w-10 h-5 border-2 border-black relative flex-shrink-0 ml-4 transition-all" style={{ background: opt.value ? "var(--black)" : "white" }}>
+                      <div className="absolute top-0 w-4 h-full border-r-2 border-black transition-all" style={{ left: opt.value ? "calc(100% - 1rem)" : "0", background: opt.value ? "white" : "#ccc" }} />
                     </div>
                   </button>
                 ))}
-                {/* Idioma */}
                 <div className="flex items-center justify-between px-5 py-4">
                   <div>
                     <div className="font-bold text-sm">Idioma de la entrevista</div>
                     <div className="text-xs opacity-50 mt-0.5">Practica en español o en inglés.</div>
                   </div>
                   <div className="flex border-2 border-black ml-4">
-                    <button
-                      onClick={() => setLang("es")}
-                      className="px-3 py-1 mono text-xs font-bold transition-all"
-                      style={{ background: lang === "es" ? "var(--black)" : "white", color: lang === "es" ? "white" : "var(--black)" }}
-                    >
-                      ES
-                    </button>
-                    <button
-                      onClick={() => setLang("en")}
-                      className="px-3 py-1 mono text-xs font-bold border-l-2 border-black transition-all"
-                      style={{ background: lang === "en" ? "var(--black)" : "white", color: lang === "en" ? "white" : "var(--black)" }}
-                    >
-                      EN
-                    </button>
+                    <button onClick={() => setLang("es")} className="px-3 py-1 mono text-xs font-bold transition-all" style={{ background: lang === "es" ? "var(--black)" : "white", color: lang === "es" ? "white" : "var(--black)" }}>ES</button>
+                    <button onClick={() => setLang("en")} className="px-3 py-1 mono text-xs font-bold border-l-2 border-black transition-all" style={{ background: lang === "en" ? "var(--black)" : "white", color: lang === "en" ? "white" : "var(--black)" }}>EN</button>
                   </div>
                 </div>
               </div>

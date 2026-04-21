@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { loadHistory, clearHistory, HistoryEntry } from "@/lib/history";
+import { loadHistory, loadHistoryFromSupabase, clearHistory, HistoryEntry } from "@/lib/history";
 
 const ROLE_LABELS: Record<string, string> = {
   frontend: "Frontend Dev",
@@ -35,8 +35,16 @@ export default function StatsPage() {
   const [confirmClear, setConfirmClear] = useState(false);
 
   useEffect(() => {
-    setHistory(loadHistory());
-    setLoaded(true);
+    loadHistoryFromSupabase().then((supabaseData) => {
+      if (supabaseData !== null) {
+        // Hay sesión activa — usar solo datos de Supabase (aunque estén vacíos)
+        setHistory(supabaseData);
+      } else {
+        // Sin sesión — usar localStorage
+        setHistory(loadHistory());
+      }
+      setLoaded(true);
+    });
   }, []);
 
   const handleClear = () => {
